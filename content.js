@@ -1,26 +1,13 @@
 const bodyElement = document.querySelector("body");
 
-function getImageBlobViaXMLHttpRequest(imageHref) {
-    return new Promise((resolve, reject) => {
-        var x = new XMLHttpRequest();
-        x.open("GET", imageHref);
-        x.responseType = "blob";
-        x.onload = function() {
-            const blob = x.response;
-            resolve(blob);
-        };
-        x.onerror = function(ev) {
-            reject(ev);
-        }
-        x.send();
-    });
-}
-
 var dirHandle = null;
 
 async function getDirectoryHandle() {
-    if(dirHandle == null) {
-        dirHandle = await window.showDirectoryPicker({ id: "screenshots-source-directory", mode: "readwrite" });
+    if (dirHandle == null) {
+        dirHandle = await window.showDirectoryPicker({
+            id: "screenshots-source-directory",
+            mode: "readwrite"
+        });
     }
     return dirHandle;
 }
@@ -40,15 +27,15 @@ async function getFileHandle(directoryHandle, filePath) {
     let directoryNames = filePath.split("/");
     const fileName = directoryNames.pop();
     let currentDirectoryHandle = directoryHandle;
-    for(const directoryName of directoryNames) {
-        if(currentDirectoryHandle.name === directoryName) {
+    for (const directoryName of directoryNames) {
+        if (currentDirectoryHandle.name === directoryName) {
             continue;
         }
         try {
             const foundDirectory = await currentDirectoryHandle.getDirectoryHandle(directoryName);
             currentDirectoryHandle = foundDirectory;
         } catch (exception) {
-            if (exception.name === "NotFoundError"){
+            if (exception.name === "NotFoundError") {
                 continue;
             } else {
                 throw exception;
@@ -70,7 +57,7 @@ async function onAcceptImageButtonClick(event) {
     }
     const testResultImageMismatchElement = button.parentElement;
     const linkElements = testResultImageMismatchElement.querySelectorAll("a");
-    const matchingLinkElements = Array.prototype.filter.call(linkElements, function(element){
+    const matchingLinkElements = Array.prototype.filter.call(linkElements, function(element) {
         return RegExp("actual\.png$").test(element.textContent);
     });
     const matchingLinkElement = matchingLinkElements[0];
@@ -94,7 +81,10 @@ async function onAcceptImageButtonClick(event) {
     if (!(writableFileStream instanceof FileSystemWritableFileStream)) {
         throw "Something went wrong getting writable file stream.";
     }
-    await writableFileStream.write({ data: imgBlob, type: "write" });
+    await writableFileStream.write({
+        data: imgBlob,
+        type: "write"
+    });
     await writableFileStream.close();
 }
 
@@ -115,12 +105,12 @@ const observer = new MutationObserver((mutations, observer) => {
                 continue;
             }
             const testId = addedNode.getAttribute("data-testid");
-            if(testId == "test-result-image-mismatch") {
+            if (testId == "test-result-image-mismatch") {
                 insertAcceptImageButton(addedNode);
                 continue;
             }
             const imageMismatchElement = addedNode.querySelector("[data-testid='test-result-image-mismatch']");
-            if(imageMismatchElement) {
+            if (imageMismatchElement) {
                 insertAcceptImageButton(imageMismatchElement);
                 continue;
             }
@@ -128,4 +118,7 @@ const observer = new MutationObserver((mutations, observer) => {
     }
 });
 
-observer.observe(bodyElement, { subtree: true, childList: true });
+observer.observe(bodyElement, {
+    subtree: true,
+    childList: true
+});
