@@ -12,13 +12,17 @@ async function getDirectoryHandle() {
     return dirHandle;
 }
 
-function getFileName() {
+function getFileName(screenshotArg) {
+    if(!(typeof screenshotArg === "string" || screenshotArg instanceof String)) {
+        throw "screenshotArg should be a string!";
+    }
     // `playwright/screenshots/${testDirectory}/{testFilePath}{/testName}/{arg}-{projectName}{ext}`,
     const testCaseTitle = document.querySelector(".test-case-title").textContent;
+    const sanitizedTestCaseTitle = testCaseTitle.replaceAll(" ", "-");
     const specLocation = RegExp(/(?<SpecLocation>.+):\d+/).exec(document.querySelector(".test-case-location").textContent).groups["SpecLocation"];
     const projectName = document.querySelector(".test-case-project-labels-row a span.label").textContent;
     const ext = "png";
-    const fileName = `playwright/screenshots/${specLocation}/${testCaseTitle}/${testCaseTitle}-1-${projectName}.${ext}`;
+    const fileName = `playwright/screenshots/${specLocation}/${sanitizedTestCaseTitle}/${screenshotArg}-${projectName}.${ext}`;
     console.log(fileName);
     return fileName;
 }
@@ -57,13 +61,20 @@ async function onAcceptImageButtonClick(event) {
     }
     const testResultImageMismatchElement = button.parentElement;
     const linkElements = testResultImageMismatchElement.querySelectorAll("a");
+    const fileNameRegex = /(?<screenshotArg>.+)\-actual\.png$/;
     const matchingLinkElements = Array.prototype.filter.call(linkElements, function(element) {
-        return RegExp("actual\.png$").test(element.textContent);
+        return fileNameRegex.test(element.textContent);
     });
     const matchingLinkElement = matchingLinkElements[0];
-
-    const imageHref = matchingLinkElement.getAttribute("href");
-    // const imgBlob = await getImageBlob(imageHref);
+    if (!(matchingLinkElement instanceof HTMLAnchorElement)) {
+        throw "This is not some anchor element!";
+    }
+    const matchingLinkElementText = matchingLinkElement.textContent;
+    const screenshotArg = fileNameRegex.exec(matchingLinkElementText)?.groups?.["screenshotArg"];
+    if (!screenshotArg) {
+        throw `Could not find screenshotArg in ${matchingLinkElementText}.`;
+    }
+    const imageHref = matchingLinkElement.href;
     const imgResponse = await fetch(imageHref);
     const imgBlob = await imgResponse.blob();
 
@@ -73,7 +84,7 @@ async function onAcceptImageButtonClick(event) {
     }
 
     // const fileHandle = await directoryHandle.getFileHandle(getFileName(), { create: true });
-    const fileHandle = await getFileHandle(directoryHandle, getFileName());
+    const fileHandle = await getFileHandle(directoryHandle, getFileName(screenshotArg));
     if (!(fileHandle instanceof FileSystemHandle)) {
         throw "Something went wrong getting file handle.";
     }
@@ -107,12 +118,10 @@ const observer = new MutationObserver((mutations, observer) => {
             const testId = addedNode.getAttribute("data-testid");
             if (testId == "test-result-image-mismatch") {
                 insertAcceptImageButton(addedNode);
-                continue;
             }
-            const imageMismatchElement = addedNode.querySelector("[data-testid='test-result-image-mismatch']");
-            if (imageMismatchElement) {
+            const imageMismatchElements = addedNode.querySelectorAll("[data-testid='test-result-image-mismatch']");
+            for(const imageMismatchElement of imageMismatchElements) {
                 insertAcceptImageButton(imageMismatchElement);
-                continue;
             }
         }
     }
