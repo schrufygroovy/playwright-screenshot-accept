@@ -16,13 +16,14 @@ function getFileName(screenshotArg) {
     if(!(typeof screenshotArg === "string" || screenshotArg instanceof String)) {
         throw "screenshotArg should be a string!";
     }
-    // `playwright/screenshots/${testDirectory}/{testFilePath}{/testName}/{arg}-{projectName}{ext}`,
+    // `playwright/screenshots/${testDirectory}/{testFilePath}{/testName}/{arg}-{viewportName}{ext}`,
     const testCaseTitle = document.querySelector(".test-case-title").textContent;
     const sanitizedTestCaseTitle = testCaseTitle.replaceAll(" ", "-");
     const specLocation = RegExp(/(?<SpecLocation>.+):\d+/).exec(document.querySelector(".test-case-location").textContent).groups["SpecLocation"];
     const projectName = document.querySelector(".test-case-project-labels-row a span.label").textContent;
+    const viewportName = /screenshot-tests-chromium-(?<viewportName>.+)$/.exec(projectName).groups["viewportName"];
     const ext = "png";
-    const fileName = `playwright/screenshots/${specLocation}/${sanitizedTestCaseTitle}/${screenshotArg}-${projectName}.${ext}`;
+    const fileName = `playwright/screenshots/${specLocation}/${sanitizedTestCaseTitle}/${screenshotArg}-${viewportName}.${ext}`;
     console.log(fileName);
     return fileName;
 }
